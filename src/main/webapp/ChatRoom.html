@@ -5,6 +5,8 @@
 <title>网页聊天室</title>
 <script>
 	var ws;
+	var lastTime;
+	
 	window.onload = function() {
 		var but = document.getElementById("but");
 		var messageDiv = document.getElementsByClassName("message-div")[0];
@@ -60,24 +62,40 @@
 			message: message.value
 		}
 		
+		// 发送消息并清空文本域
 		ws.send(JSON.stringify(data));
 		message.value = "";
 		
-		var div = document.createElement("div");
-		div.innerHTML = data.userName + ": " + data.message;
-		div.className = "message mine";
 		var messageDiv = document.getElementById("messageDiv");
-		messageDiv.appendChild(div);
+		
+		// 若不在同一分钟则更新时间
+		var nowTime = getTime();
+		if (typeof(lastTime) == "undefined" || nowTime != lastTime) {
+			messageDiv.appendChild(createDiv("time", nowTime));
+			lastTime = nowTime;
+		}
+		
+		// 显示自己发送的消息
+		var content = data.userName + ": " + data.message;
+		var className = "message mine";
+		messageDiv.appendChild(createDiv(className, content));
 	}
 	
 	function receiveMessage(e) {
 		var data = JSON.parse(e.data);
-		
-		var div = document.createElement("div");
-		div.innerHTML = data.userName + ": " + data.message;
-		div.className = "message other";
 		var messageDiv = document.getElementById("messageDiv");
-		messageDiv.appendChild(div);
+		
+		// 若不在同一分钟则更新时间
+		var nowTime = getTime();
+		if (typeof(lastTime) == "undefined" || nowTime != lastTime) {
+			messageDiv.appendChild(createDiv("time", nowTime));
+			lastTime = nowTime;
+		}
+		
+		// 显示接收到的信息
+		var content = data.userName + ": " + data.message;
+		var className = "message other";
+		messageDiv.appendChild(createDiv(className, content));
 	}
 	
 	function isNullString(value) {
@@ -85,6 +103,18 @@
 			return true;
 		}
 		return false;
+	}
+	
+	function createDiv(className, innerHTML) {
+		var div = document.createElement("div");
+		div.innerHTML = innerHTML;
+		div.className = className;
+		return div;
+	}
+	
+	function getTime() {
+		var date = new Date();
+		return date.getHours() + ":" + date.getMinutes();
 	}
 </script>
 <style>
@@ -103,9 +133,20 @@
 		border-bottom-width: 0px;
 		border-top-left-radius: 3px;
 		border-top-right-radius: 3px;
-		background-color: #f5f5f5;
+		background-color: #F5F5F5;
 		overflow-y: auto;
 		text-align: center;
+	}
+	.time {
+		border-radius: 3px;
+		width: 40px;
+		height: auto;
+		font-size: 12px;
+		margin: 3px auto;
+		padding: 2px;
+		text-align: center;
+		background-color: #DADADA;
+		color: #FFFFFF;
 	}
 	.message {
 		width: 96%;
