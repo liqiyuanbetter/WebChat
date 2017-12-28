@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>网页聊天室</title>
+<script>
+	var ws;
+	window.onload = function() {
+		var but = document.getElementById("but");
+		var messageDiv = document.getElementsByClassName("message-div")[0];
+		var textArea = document.getElementsByTagName("textarea")[0];
+		
+		// 检测浏览器是否支持websocket对象
+		if (typeof(WebSocket) === "undefined") {
+			alert("您的浏览器不支持即时通讯!");
+			return;
+		}
+		
+		ws = new WebSocket("ws://10.65.53.33:99/websocket/chatserver");
+		
+		ws.addEventListener("open", function() {
+			but.addEventListener("click", sendMessage);
+		});
+		
+		ws.addEventListener("message", receiveMessage);
+		
+		textArea.addEventListener("keydown", function(e) {
+			var keyCode = e.keyCode;
+			
+			// 按下shift + enter组合键换行
+			if (keyCode == "13" && e.shiftKey) {
+				return;
+			}
+			
+			// 按下回车键发送信息
+			if (keyCode == "13") {
+				// 按下按键后会先执行监听器里面的代码然后才在文本框中显示文字
+				// 监听器总是在该事件结束前先执行
+				// 因此如果不阻止默认行为，那么第一次按下空格时文本域为空会显示不能发送空白消息
+				// 但仍会在文本域中写入一个换行符，文本域内容就不在为空
+				e.preventDefault();
+				sendMessage();
+				return;
+			}
+		});
+	}
+	
+	function sendMessage(e) {
+		// 发送信息不能为空
+		var message = document.getElementsByTagName("textarea")[0];
+		if (isNullString(message.value)) {
+			console.log("不能发送空白消息");
+			return;
+		}
+		
+		var nickName = document.getElementsByTagName("input")[0];
+		
+		var data = {
+			userName: isNullString(nickName.value) ? "匿名" : nickName.value,
+			message: message.value
+		}
+		
+		ws.send(JSON.stringify(data));
+		message.value = "";
+		
+		var div = document.createElement("div");
+		div.innerHTML = data.userName + ": " + data.message;
+		div.className = "message mine";
+		var messageDiv = document.getElementById("messageDiv");
+		messageDiv.appendChild(div);
+	}
+	
+	function receiveMessage(e) {
+		var data = JSON.parse(e.data);
+		
+		var div = document.createElement("div");
+		div.innerHTML = data.userName + ": " + data.message;
+		div.className = "message other";
+		var messageDiv = document.getElementById("messageDiv");
+		messageDiv.appendChild(div);
+	}
+	
+	function isNullString(value) {
+		if (value == "" || value == null) {
+			return true;
+		}
+		return false;
+	}
+</script>
+<style>
+	body, html {
+		margin: 0px;
+		padding: 0px;
+	}
+	.wrapper {
+		width: 500px;
+		margin: 100px auto;
+	}
+	.message-div {
+		width: 100%;
+		height: 300px;
+		border: 1px solid #7f7f7f;
+		border-bottom-width: 0px;
+		border-top-left-radius: 3px;
+		border-top-right-radius: 3px;
+		background-color: #f5f5f5;
+		overflow-y: auto;
+		text-align: center;
+	}
+	.message {
+		width: 96%;
+		height: auto;
+		display: inline-block;
+		margin-top: 3px;
+		padding: 5px;
+	}
+	.other {
+		text-align: left;
+		background-color: #ffffff;
+		border: 1px solid #EDEDED;
+	}
+	.mine {
+		text-align: right;
+		background-color: #9EEA6A;
+	}
+	.input-div {
+		width: 100%;
+		height: 115px;
+		border: 1px solid #7f7f7f;
+		border-bottom-left-radius: 3px;
+		border-bottom-right-radius: 3px;
+		text-align: center;
+	}
+	textarea {
+		resize: none;
+		outline: none;
+		border: none;
+		width: 96%;
+		height: 80px;
+		margin: auto;
+		font-family: "微软雅黑";
+	}
+	button {
+		border: none;
+		background-color: #eeeeee;
+		outline: none;
+		padding: 2px 5px;
+	}
+	button:hover {
+		color: #ffffff;
+		background-color: #7f7f7f;
+	}
+	button:active {
+		background-color: #d5d5d5;
+	}
+	textarea::-webkit-input-placeholder {
+    	color: #d5d5d5;
+    	font-family: "微软雅黑";
+	}
+</style>
+</head>
+<body>
+	<div class="wrapper">
+		<div style="font-family: '微软雅黑'; margin-bottom: 10px;">
+			<span>设置昵称：</span>
+			<input type="text"> 
+		</div>
+		<div class="message-div" id="messageDiv"></div>
+		<div class="input-div">
+			<textarea placeholder="发送消息..." autofocus spellcheck="false"></textarea>
+			<div style="text-align: right; width: 90%; display: inline-block;">
+				<button id="but">发送</button>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
